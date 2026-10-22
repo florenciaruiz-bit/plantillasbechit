@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Control de Plantillas — Aforar &amp; BechIT</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;background:#F2F5F8;color:#0F1B2D}
+button{font-family:inherit;cursor:pointer;text-align:left}
+.wrap{padding:40px 48px;display:flex;flex-direction:column;gap:20px;max-width:1400px;margin:0 auto}
+.c{background:#fff;border:1px solid #DCE3EA;border-radius:14px;padding:20px 24px}
+.c h2{margin:0 0 4px;font-size:16px;font-weight:600}
+.bar{display:flex;align-items:center;gap:10px;width:100%;border:0;border-radius:8px;padding:6px 8px;margin-top:4px;font-size:13px;color:#1F2A3A;background:transparent}
+.bar:hover{background:#EEF3F7}
+.row{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,.9fr) minmax(0,1.2fr) minmax(0,1.2fr);gap:12px;align-items:center;width:100%;border:0;border-bottom:1px solid #E6EBF0;padding:10px 12px;font-size:14px;color:#1F2A3A;min-width:560px;background:#fff}
+button.row:hover{background:#EEF3F7}
+.f{height:44px;border:1px solid #B9C4D0;border-radius:10px;padding:0 12px;font-family:inherit;font-size:14px;background:#fff;color:#0F1B2D}
+.pill{display:inline-block;border-radius:999px;padding:3px 10px;font-size:12px;font-weight:600}
+.kn{font-size:38px;font-weight:700;line-height:1}
+.kl{margin-top:6px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#4A5768}
+.track{flex:1;height:10px;background:#E6EBF0;border-radius:5px;overflow:hidden}
+.fill{display:block;height:100%}
+@media(max-width:700px){.wrap{padding:24px 16px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+<div style="font-size:13px;font-weight:600;letter-spacing:.1em;color:#0E7C86">AFORAR &amp; BECHIT · SOLO LECTURA</div>
+<h1 style="margin:6px 0 0;font-size:34px;font-weight:700">Control centralizado de plantillas</h1>
+<p style="margin:6px 0 0;font-size:15px;color:#4A5768">Vista de consulta: refleja la planilla original, que es la única que se edita.</p>
+<p id="status" style="margin:6px 0 0;font-size:13px;color:#4A5768">Leyendo la planilla…</p>
+</header>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px">
+<div class="c"><div class="kn" id="kTotal"></div><div class="kl">Prestadoras</div></div>
+<div class="c"><div class="kn" id="kProd" style="color:#0B5F67"></div><div class="kl">En producción</div></div>
+<div class="c"><div class="kn" id="kDev" style="color:#1A3FA8"></div><div class="kl">En desarrollo</div></div>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center">
+<input class="f" id="q" type="search" aria-label="Buscar prestadora" placeholder="Buscar prestadora" style="flex:1 1 260px">
+<select class="f" id="fs" aria-label="Servicio"></select>
+<select class="f" id="fa" aria-label="App"></select>
+<select class="f" id="fe" aria-label="Estado Aforar"></select>
+<button class="f" id="clear" style="background:#0F1B2D;color:#fff;border-color:#0F1B2D;font-weight:600">Limpiar filtros</button>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start">
+<div style="flex:999 1 560px;min-width:0;display:flex;flex-direction:column;gap:16px">
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px">
+<section class="c"><h2>Estado Aforar</h2><div id="bE"></div></section>
+<section class="c"><h2>App</h2><div id="bA"></div></section>
+<section class="c"><h2>Servicio</h2><div id="bS"></div></section>
+</div>
+<section class="c" style="padding:0;overflow:hidden">
+<div style="padding:16px 24px 8px"><h2 id="listTitle"></h2></div>
+<div style="overflow:auto;max-height:560px">
+<div class="row" style="font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#4A5768"><span>Prestadora</span><span>Servicio</span><span>App</span><span>Estado Aforar</span></div>
+<div id="rows"></div>
+</div>
+</section>
+</div>
+<aside class="c" id="panel" style="flex:1 1 320px;min-width:0"></aside>
+</div>
+</div>
+<script>
+let DATA=[{"id":0,"n":"Claro Colombia","s":"Sin dato","ap":"BechIT","e":"Producción"},{"id":1,"n":"CoopRioTercero","s":"Datos","ap":"BechIT","e":"Producción"},{"id":2,"n":"CoopVillaGeneralBelgrano","s":"Datos","ap":"BechIT","e":"Producción"},{"id":3,"n":"Anura","s":"Datos","ap":"BechIT","e":"Producción"},{"id":4,"n":"ATT","s":"Datos","ap":"BechIT","e":"Producción"},{"id":5,"n":"Bell Ville","s":"Datos","ap":"BechIT","e":"Producción"},{"id":6,"n":"Bvnet","s":"Datos","ap":"BechIT","e":"Producción"},{"id":7,"n":"Cisnet","s":"Datos","ap":"BechIT","e":"Producción"},{"id":8,"n":"Claro Argentina","s":"Datos","ap":"Automatico Aforar","e":"Desarrollo"},{"id":9,"n":"ClaroBechIT","s":"Datos","ap":"BechIT","e":"Producción"},{"id":10,"n":"CoopVillaGeneralBelgrano","s":"Datos","ap":"BechIT","e":"Producción"},{"id":11,"n":"Flux","s":"Datos","ap":"BechIT","e":"Producción"},{"id":12,"n":"General Deheza","s":"Datos","ap":"BechIT","e":"Producción"},{"id":13,"n":"Gigared","s":"Datos","ap":"BechIT","e":"Producción"},{"id":14,"n":"Lumen Colombia","s":"Datos","ap":"BechIT","e":"Producción"},{"id":15,"n":"OpenSpirit","s":"Datos","ap":"BechIT","e":"Producción"},{"id":16,"n":"Redynet","s":"Datos","ap":"BechIT","e":"Producción"},{"id":17,"n":"Ricoh","s":"Datos","ap":"BechIT","e":"Producción"},{"id":18,"n":"Starlink","s":"Datos","ap":"BechIT","e":"Producción"},{"id":19,"n":"Telespazio","s":"Datos","ap":"BechIT","e":"Producción"},{"id":20,"n":"Tesacom","s":"Datos","ap":"BechIT","e":"Producción"},{"id":21,"n":"Velonet","s":"Datos","ap":"BechIT","e":"Producción"},{"id":22,"n":"Westnet","s":"Datos","ap":"BechIT","e":"Producción"},{"id":23,"n":"WestNet","s":"Datos","ap":"BechIT","e":"Producción"},{"id":24,"n":"XFly","s":"Datos","ap":"BechIT","e":"Producción"},{"id":25,"n":"LumenChile","s":"Datos","ap":"BechIT","e":"Producción"},{"id":26,"n":"LumenColombia","s":"Datos","ap":"BechIT","e":"Producción"},{"id":27,"n":"LumenEcuador","s":"Datos","ap":"BechIT","e":"Producción"},{"id":28,"n":"LumenPeru","s":"Datos","ap":"BechIT","e":"Producción"},{"id":29,"n":"Metrotel","s":"Datos","ap":"BechIT","e":"Producción"},{"id":30,"n":"Nubicom","s":"Datos","ap":"BechIT","e":"Producción"},{"id":31,"n":"Telepab","s":"Datos","ap":"BechIT","e":"Producción"},{"id":32,"n":"TeleRed","s":"Datos","ap":"BechIT","e":"Producción"},{"id":33,"n":"Antel Uruguay","s":"Fija","ap":"BechIT","e":"Producción"},{"id":34,"n":"Lumen Chile","s":"Fija","ap":"Automatico Aforar","e":"Producción"},{"id":35,"n":"Lumen Ecuador","s":"Fija","ap":"Automatico Aforar","e":"Producción"},{"id":36,"n":"Lumen EEUU","s":"Fija","ap":"BechIT","e":"Producción"},{"id":37,"n":"Lumen Peru","s":"Fija","ap":"Access","e":"Producción"},{"id":38,"n":"CNT Ecuador","s":"Fija","ap":"BechIT","e":"Producción"},{"id":39,"n":"Coop Tortuguitas","s":"Fija","ap":"BechIT","e":"Producción"},{"id":40,"n":"ETB Colombia","s":"Fija","ap":"BechIT","e":"Producción"},{"id":41,"n":"General Deheza","s":"Fija","ap":"BechIT","e":"Producción"},{"id":42,"n":"Hondutel Honduras","s":"Fija","ap":"Access","e":"Producción"},{"id":43,"n":"Lumen","s":"Fija","ap":"BechIT","e":"Producción"},{"id":44,"n":"Telefonica Formato detallado","s":"Fija","ap":"Automatico Aforar","e":"Producción"},{"id":45,"n":"Telefonica Peru","s":"Fija","ap":"BechIT","e":"Producción"},{"id":46,"n":"Vivo Brasil","s":"Fija","ap":"BechIT","e":"Producción"},{"id":47,"n":"Github","s":"Sin dato","ap":"BechIT","e":"Producción"},{"id":48,"n":"Lumen","s":"Sin dato","ap":"BechIT","e":"Producción"},{"id":49,"n":"AirTel India","s":"Móvil","ap":"BechIT","e":"Producción"},{"id":50,"n":"Altice R. Dominicana","s":"Móvil","ap":"Automatico Aforar","e":"Producción"},{"id":51,"n":"Antel Uruguay","s":"Móvil","ap":"Automatico Aforar","e":"Producción"},{"id":52,"n":"ATT","s":"Móvil","ap":"BechIT","e":"Producción"},{"id":53,"n":"Claro","s":"Móvil","ap":"Automatico Aforar","e":"Desarrollo"},{"id":54,"n":"FPT Retail Vietnam","s":"Móvil","ap":"Automatico Aforar","e":"Producción"},{"id":55,"n":"Jio India","s":"Móvil","ap":"BechIT","e":"Producción"},{"id":56,"n":"Maxis Malasia","s":"Móvil","ap":"BechIT","e":"Producción"},{"id":57,"n":"Movistar Colombia","s":"Móvil","ap":"BechIT","e":"Producción"},{"id":58,"n":"Movistar Kite","s":"Móvil","ap":"BechIT","e":"Producción"},{"id":59,"n":"Movistar188 Chile","s":"Móvil","ap":"BechIT","e":"Producción"},{"id":60,"n":"OneNz Nueva Zelanda","s":"Móvil","ap":"BechIT","e":"Producción"},{"id":61,"n":"Optus Australia","s":"Móvil","ap":"BechIT","e":"Producción"},{"id":62,"n":"Smart Filipinas","s":"Móvil","ap":"BechIT","e":"Desarrollo"},{"id":63,"n":"Softbank Japon","s":"Móvil","ap":"Automatico Aforar","e":"Producción"},{"id":64,"n":"T-Mobile EEUU","s":"Móvil","ap":"Automatico Aforar","e":"Producción"},{"id":65,"n":"Telcel Mexico","s":"Móvil","ap":"Automatico Aforar","e":"Producción"},{"id":66,"n":"Telus","s":"Móvil","ap":"Automatico Aforar","e":"Producción"},{"id":67,"n":"Tigo Colombia","s":"Móvil","ap":"BechIT","e":"Producción"},{"id":68,"n":"TIM Brasil","s":"Móvil","ap":"BechIT","e":"Producción"},{"id":69,"n":"Verizon EEUU","s":"Móvil","ap":"BechIT","e":"Producción"},{"id":70,"n":"Viettel Vietnam","s":"Móvil","ap":"BechIT","e":"Producción"},{"id":71,"n":"Vodafone India","s":"Móvil","ap":"BechIT","e":"Producción"},{"id":72,"n":"Wom Chile","s":"Móvil","ap":"BechIT","e":"Producción"},{"id":73,"n":"Movistar España Fija","s":"Fija","ap":"BechIT","e":"Desarrollo"},{"id":74,"n":"Movistar Uruguay Móvil","s":"Móvil","ap":"BechIT","e":"Desarrollo"},{"id":75,"n":"Lumen Mexico","s":"Fija","ap":"Access","e":"Producción"},{"id":76,"n":"Telecentro","s":"Datos","ap":"Automatico Aforar","e":"Producción"},{"id":77,"n":"Telefonica Azure","s":"Datos","ap":"BechIT","e":"Producción"},{"id":78,"n":"LineIP","s":"Fija","ap":"Automatico Aforar","e":"Desarrollo"},{"id":79,"n":"Entel Peru","s":"Móvil","ap":"BechIT","e":"Producción"},{"id":80,"n":"Iron Mountain","s":"Datos","ap":"BechIT","e":"Producción"},{"id":81,"n":"La Rioja","s":"Datos","ap":"BechIT","e":"Producción"},{"id":82,"n":"Zonamerica Uruguay","s":"Fija","ap":"BechIT","e":"Producción"},{"id":83,"n":"Telecomunique Guatemala","s":"Fija","ap":"BechIT","e":"Producción"},{"id":84,"n":"Line IP","s":"Fija","ap":"BechIT","e":"Producción"},{"id":85,"n":"EasyMail","s":"Datos","ap":"BechIT","e":"Producción"}];
+const CSV_URL="https://docs.google.com/spreadsheets/d/e/2PACX-1vRRSMWJDIyu4O0HMSbkOo8uF0KI1HFDN3fnbjV7BGYDBUHjkzCI2IIbddF-YL0Xdh9HtdaYzvSCnZPx/pub?output=csv";
+const FALLBACK_DATE="22/10/2026";
+const SV={datos:'Datos',movil:'Móvil',fija:'Fija'};
+function parseCSV(t){const rows=[];let r=[],f='',q=false;
+for(let i=0;i<t.length;i++){const c=t[i];
+if(q){if(c==='"'){if(t[i+1]==='"'){f+='"';i++;}else q=false;}else f+=c;}
+else if(c==='"')q=true;
+else if(c===','){r.push(f);f='';}
+else if(c==='\n'||c==='\r'){if(c==='\r'&&t[i+1]==='\n')i++;r.push(f);f='';rows.push(r);r=[];}
+else f+=c;}
+if(f!==''||r.length){r.push(f);rows.push(r);}
+return rows;}
+const norm=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+function service(name,col,hasCol){
+const m=name.match(/^(datos|movil|fija)\s*(.*)$/i);
+const shown=m?(m[2]||name):name;
+if(hasCol){return[SV[norm(col)]||'Sin dato',shown];}
+if(m)return[SV[norm(m[1])],shown];
+if(/\bfija\b/i.test(name))return['Fija',name];
+if(/\bm[oó]vil\b/i.test(name))return['Móvil',name];
+if(/\bdatos\b/i.test(name))return['Datos',name];
+return['Sin dato',name];}
+function fromCSV(text){
+const rows=parseCSV(text);if(!rows.length)throw new Error('vacío');
+const h=rows[0].map(norm);
+const iN=h.findIndex(x=>x.startsWith('prestador')),iA=h.indexOf('app'),iE=h.findIndex(x=>x.startsWith('estado')),iS=h.indexOf('servicio');
+if(iN<0||iA<0||iE<0)throw new Error('columnas');
+const out=[];
+rows.slice(1).forEach(r=>{
+const name=(r[iN]||'').replace(/\s+/g,' ').trim(),ap=(r[iA]||'').trim(),e=(r[iE]||'').trim();
+if(!name||(!ap&&!e))return;
+const [s,n]=service(name,iS>=0?r[iS]:'',iS>=0);
+out.push({id:out.length,n,s,ap:ap||'Sin dato',e:e.replace('Produccion','Producción')||'Sin dato'});});
+if(!out.length)throw new Error('sin filas');
+return out;}
+function status(ok){const el=$('status');
+if(ok){const d=new Date();el.style.color='#0B5F67';el.textContent='Datos en vivo de la planilla, leídos a las '+d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})+'.';}
+else{el.style.color='#8A4B08';el.textContent='Mostrando datos guardados al '+FALLBACK_DATE+': no se pudo leer la planilla.';}}
+
+const PILL={'Producción':['#D9F0F1','#0B5F67'],'Desarrollo':['#DBE7FF','#1A3FA8']};
+const pill=e=>PILL[e]||['#E6EBF0','#1F2A3A'];
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const S={q:'',s:'',ap:'',e:'',sel:null};
+const $=id=>document.getElementById(id);
+const ok=(r,skip)=>['s','ap','e'].every(k=>k===skip||!S[k]||r[k]===S[k])&&(!S.q||r.n.toLowerCase().includes(S.q.toLowerCase()));
+function fill(sel,k,all){const v=[...new Set(DATA.map(r=>r[k]))].sort();sel.innerHTML='<option value="">'+all+'</option>'+v.map(x=>'<option value="'+esc(x)+'">'+esc(x)+'</option>').join('');}
+function bars(el,k){
+const c={};DATA.filter(r=>ok(r,k)).forEach(r=>{c[r[k]]=(c[r[k]]||0)+1;});
+const a=Object.entries(c).sort((x,y)=>y[1]-x[1]);const m=Math.max(1,...a.map(x=>x[1]));
+el.innerHTML=a.map(([l,n])=>{const on=S[k]===l;return '<button class="bar" data-k="'+k+'" data-v="'+esc(l)+'" style="'+(on?'background:#E3EAF1':'')+'"><span style="flex:0 0 150px">'+esc(l)+'</span><span class="track"><span class="fill" style="width:'+Math.round(n/m*100)+'%;background:'+(on?'#0F1B2D':'#0E7C86')+'"></span></span><b style="flex:0 0 28px;text-align:right">'+n+'</b></button>';}).join('');
+}
+function render(){
+const list=DATA.filter(r=>ok(r,null)).sort((a,b)=>a.n.localeCompare(b.n,'es'));
+$('kTotal').textContent=list.length;
+$('kProd').textContent=list.filter(r=>r.e==='Producción').length;
+$('kDev').textContent=list.filter(r=>r.e==='Desarrollo').length;
+$('listTitle').textContent='Prestadoras ('+list.length+')';
+$('fs').value=S.s;$('fa').value=S.ap;$('fe').value=S.e;
+bars($('bE'),'e');bars($('bA'),'ap');bars($('bS'),'s');
+$('rows').innerHTML=list.map(r=>{const p=pill(r.e);return '<button class="row" data-id="'+r.id+'" style="'+(S.sel===r.id?'background:#E3EAF1':'')+'"><b>'+esc(r.n)+'</b><span>'+esc(r.s)+'</span><span>'+esc(r.ap)+'</span><span><span class="pill" style="background:'+p[0]+';color:'+p[1]+'">'+esc(r.e)+'</span></span></button>';}).join('');
+const x=DATA.find(r=>r.id===S.sel);
+if(!x){$('panel').innerHTML='<div style="padding:24px 0;color:#4A5768;font-size:15px;line-height:1.5">Elegí una prestadora de la lista para ver su detalle acá.</div>';}
+else{const p=pill(x.e);$('panel').innerHTML='<div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:12px"><h2 style="margin:0;font-size:22px;font-weight:700">'+esc(x.n)+'</h2><button class="f" id="close" style="padding:0 14px">Cerrar</button></div><dl style="margin:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:10px 12px;font-size:14px;align-items:center"><dt style="color:#4A5768">Servicio</dt><dd style="margin:0;font-weight:500">'+esc(x.s)+'</dd><dt style="color:#4A5768">App</dt><dd style="margin:0;font-weight:500">'+esc(x.ap)+'</dd><dt style="color:#4A5768">Estado Aforar</dt><dd style="margin:0"><span class="pill" style="background:'+p[0]+';color:'+p[1]+'">'+esc(x.e)+'</span></dd></dl>';}
+}
+fill($('fs'),'s','Todos los servicios');fill($('fa'),'ap','Todas las apps');fill($('fe'),'e','Todos los estados');
+$('q').addEventListener('input',e=>{S.q=e.target.value;render();});
+$('fs').addEventListener('change',e=>{S.s=e.target.value;render();});
+$('fa').addEventListener('change',e=>{S.ap=e.target.value;render();});
+$('fe').addEventListener('change',e=>{S.e=e.target.value;render();});
+$('clear').addEventListener('click',()=>{S.q='';S.s='';S.ap='';S.e='';$('q').value='';render();});
+document.addEventListener('click',e=>{
+const b=e.target.closest('.bar');if(b){const k=b.dataset.k,v=b.dataset.v;S[k]=S[k]===v?'':v;render();return;}
+const r=e.target.closest('button.row');if(r){S.sel=+r.dataset.id;render();return;}
+if(e.target.closest('#close')){S.sel=null;render();}
+});
+render();
+fetch(CSV_URL,{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error(r.status);return r.text();}).then(t=>{
+DATA=fromCSV(t);S.sel=null;
+fill($('fs'),'s','Todos los servicios');fill($('fa'),'ap','Todas las apps');fill($('fe'),'e','Todos los estados');
+['s','ap','e'].forEach(k=>{if(S[k]&&!DATA.some(r=>r[k]===S[k]))S[k]='';});
+render();status(true);}).catch(()=>status(false));
+</script>
+</body>
+</html>
